@@ -33,8 +33,11 @@ PAGE_WIDTH, PAGE_HEIGHT = A4
 MARGIN = 8 * mm
 COLS = 3
 ROWS = 8
-LABEL_W = (PAGE_WIDTH - 2 * MARGIN) / COLS
-LABEL_H = (PAGE_HEIGHT - 2 * MARGIN) / ROWS
+GAP_X = 2.5 * mm  # Horizontal gap between label columns
+GAP_Y = 2.5 * mm  # Vertical gap between label rows
+
+LABEL_W = (PAGE_WIDTH - 2 * MARGIN - (COLS - 1) * GAP_X) / COLS
+LABEL_H = (PAGE_HEIGHT - 2 * MARGIN - (ROWS - 1) * GAP_Y) / ROWS
 BARCODE_TYPE = "code128"  # works with any alphanumeric barcode string
 # -----------------------------------------
 
@@ -161,8 +164,8 @@ def generate_pdf(products, output_path):
                 if idx >= total_labels:
                     break
                 product = label_queue[idx]
-                x = MARGIN + col * LABEL_W
-                y = PAGE_HEIGHT - MARGIN - row * LABEL_H
+                x = MARGIN + col * (LABEL_W + GAP_X)
+                y = PAGE_HEIGHT - MARGIN - row * (LABEL_H + GAP_Y)
 
                 if product["barcode"] not in barcode_cache:
                     barcode_cache[product["barcode"]] = generate_barcode_image(product["barcode"])

@@ -1,6 +1,6 @@
 import pandas as pd
 
-INPUT_FILE = "products.xlsx"
+INPUT_FILE = "odoo_products_100_sample.xlsx"
 OUTPUT_FILE = "products_with_barcodes.xlsx"
 
 # 12-digit starting number (without check digit)

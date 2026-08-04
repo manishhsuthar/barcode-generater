@@ -97,5 +97,7 @@ PAGE_WIDTH, PAGE_HEIGHT = A4
 MARGIN = 8 * mm        # Page margin
 COLS = 3               # Number of columns per A4 page
 ROWS = 8               # Number of rows per A4 page
+GAP_X = 2.5 * mm       # Horizontal gap between label columns
+GAP_Y = 2.5 * mm       # Vertical gap between label rows
 BARCODE_TYPE = "code128" # Barcode encoding format
 ```
