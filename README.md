@@ -9,6 +9,11 @@ A Python toolset to automatically generate standard EAN-13 barcode numbers for p
 ```text
 barcode-generator/
 │
+├── index.html                            # Web Application Frontend Interface
+├── styles.css                            # Modern Design System & Print Stylesheet
+├── app.js                                # Frontend Interactive Controller & EAN-13 Generator
+├── server.py                             # Local HTTP Server to serve Web Frontend UI
+│
 ├── generate_barcodes.py                  # Script 1: Assigns EAN-13 barcodes with check digits to products
 ├── generate_labels.py                    # Script 2: Reads product spreadsheet and creates printable A4 PDF grid
 │
@@ -25,9 +30,12 @@ barcode-generator/
 
 ## ✨ Features
 
+- **🌐 Interactive Web Frontend**: Full-featured single page web application for barcode creation, editing, excel parsing, and printing.
+- **🏷️ Real-time Printable A4 Grid Preview**: WYSIWYG live layout engine supporting A4 3×8 (24 labels), 2×7 (14 labels), 4×10 (40 labels), or single thermal labels.
 - **EAN-13 Barcode Generator**: Calculates correct 13th check-digit using modulo-10 algorithm for 12-digit numeric base sequences.
-- **A4 PDF Grid Layout**: Automatically arranges labels into a customizable 3×8 grid (24 labels per page).
 - **Stock-based Multipliers**: Automatically duplicates each label based on product quantity on hand.
+- **Excel/CSV Drag & Drop**: Reads `.xlsx` and `.csv` spreadsheets directly in the browser via SheetJS.
+- **Single Barcode Generator**: Instant SVG vector barcode generator for CODE128, EAN-13, EAN-8, UPC, CODE39.
 - **Flexible Column Mapping**: Intelligently identifies columns regardless of casing or variations (`Name`/`Product Name`, `Quantity`/`Stock`/`Qty`, `Barcode`/`Code`, `Price`/`Sales Price`).
 - **High-Resolution Vector Output**: Uses `reportlab` to render crisp barcodes, text, and pricing boxes suitable for label stickers or paper sheets.
 
@@ -47,7 +55,26 @@ pip install python-barcode reportlab pandas openpyxl pillow
 
 ## 🚀 Usage Guide
 
-### Step 1: Generate Barcode Numbers for Products
+### Step 1: Launch the Interactive Web Frontend Interface
+
+You can open `index.html` directly in any web browser, or start the included local web server:
+
+```bash
+python server.py
+```
+
+Then open **`http://localhost:8000`** in your browser.
+
+From the web frontend, you can:
+- **Upload Excel/CSV product spreadsheets** (`.xlsx`, `.csv`) with drag & drop.
+- **Auto-generate EAN-13 barcodes** with modulo-10 check digits.
+- **Customize label layout grid** (A4 3x8, 2x7, 4x10, Thermal 50x25mm).
+- **Live Preview & Direct Print** (`Ctrl+P` / Print Labels button).
+- **Export updated Excel file** with barcodes assigned.
+
+---
+
+### Step 2: Generate Barcode Numbers via CLI Script
 
 If your product spreadsheet does not have barcode numbers assigned, run `generate_barcodes.py`:
 

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrintoGraph - Barcode Generator & Label Sheet Creator</title>
+  
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- External Libraries for Barcodes & Excel Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-barcode"></i></div>
+      <div>
+        <span>PrintoGraph</span>
+        <span class="brand-tag">Studio v2.0</span>
+      </div>
+    </a>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-target="catalogView">
+        <i class="fa-solid fa-table-list"></i> Catalog & Data
+      </button>
+      <button class="tab-btn" data-target="previewView">
+        <i class="fa-solid fa-print"></i> Label Sheet & Print Preview
+      </button>
+      <button class="tab-btn" data-target="quickGenView">
+        <i class="fa-solid fa-bolt"></i> Single Barcode
+      </button>
+    </nav>
+
+    <!-- Header Quick Actions -->
+    <div class="nav-controls">
+      <button class="btn btn-outline btn-sm" id="btnExportExcel">
+        <i class="fa-solid fa-file-excel"></i> Export Excel
+      </button>
+      <button class="btn btn-primary btn-sm btn-print">
+        <i class="fa-solid fa-print"></i> Print Labels
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Area -->
+  <main class="app-container">
+
+    <!-- Overview Stats Bar -->
+    <div class="stats-bar no-print">
+      <div class="stat-item">
+        <div class="stat-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div>
+          <div class="stat-value" id="statTotalProducts">0</div>
+          <div class="stat-label">Total Unique Products</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background:rgba(99,102,241,0.15); color:#6366f1;">
+          <i class="fa-solid fa-tags"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statTotalLabels">0</div>
+          <div class="stat-label">Labels to Print (Stock Multiplied)</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;">
+          <i class="fa-solid fa-sheet-plastic"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statGridFormat">A4 (3×8 Grid)</div>
+          <div class="stat-label">24 Labels per Page</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 1: Catalog & Data Import View
+         ==================================================================== -->
+    <section id="catalogView" class="view-section active">
+      <div class="dashboard-grid">
+        
+        <!-- Sidebar Controls -->
+        <div>
+          <!-- Add Product Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-plus-circle"></i> Add Single Product</div>
+            </div>
+            <form id="addProductForm">
+              <div class="form-group">
+                <label class="form-label">Product Name</label>
+                <input type="text" id="inputName" class="form-control" placeholder="e.g. Wireless Ergonomic Mouse" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Price (Rs.)</label>
+                  <input type="number" id="inputPrice" class="form-control" placeholder="499.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Stock Qty</label>
+                  <input type="number" id="inputQty" class="form-control" placeholder="5" min="1" value="5" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Barcode (Leave blank for EAN-13)</label>
+                <input type="text" id="inputBarcode" class="form-control" placeholder="Auto-generated if empty">
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fa-solid fa-plus"></i> Add Product
+              </button>
+            </form>
+          </div>
+
+          <!-- File Import / Dropzone -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-file-import"></i> Bulk Upload Excel / CSV</div>
+            </div>
+            <div class="dropzone" id="dropzone">
+              <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+              <div class="dropzone-text">
+                Drag & drop <strong>.xlsx / .csv</strong> file here
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Auto-maps Name, Price, Quantity & Barcode columns</div>
+              <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none;">
+            </div>
+            
+            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+              <button class="btn btn-outline btn-sm" id="btnLoadSample" style="flex:1;">
+                <i class="fa-solid fa-vial"></i> Load Demo Data
+              </button>
+              <button class="btn btn-outline btn-sm" id="btnAutoBarcodes" style="flex:1;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto EAN-13
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Products Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-list-check"></i> Product Catalog</div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-danger btn-sm" id="btnClearAll">
+                <i class="fa-solid fa-trash-can"></i> Clear All
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Product Name</th>
+                  <th style="width:110px;">Price</th>
+                  <th style="width:90px;">Stock Qty</th>
+                  <th style="width:190px;">Barcode Number</th>
+                  <th style="width:50px; text-align:center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 2: Label Sheet Designer & Print Preview
+         ==================================================================== -->
+    <section id="previewView" class="view-section">
+      <div class="dashboard-grid">
+        
+        <!-- Sidebar Designer Settings -->
+        <div class="no-print">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-sliders"></i> Label Layout & Grid</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Grid Preset Format</label>
+              <select id="presetSelect" class="form-select">
+                <option value="a4_3x8" selected>A4 Grid (3 Cols × 8 Rows = 24 labels)</option>
+                <option value="a4_2x7">A4 Grid (2 Cols × 7 Rows = 14 labels)</option>
+                <option value="a4_4x10">A4 Grid (4 Cols × 10 Rows = 40 labels)</option>
+                <option value="thermal_50x25">Single Thermal Label (50mm × 25mm)</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Columns</label>
+                <input type="number" id="colsInput" class="form-control" value="3" min="1" max="10">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rows</label>
+                <input type="number" id="rowsInput" class="form-control" value="8" min="1" max="20">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Margin Top (mm)</label>
+                <input type="number" id="marginTopInput" class="form-control" value="8" step="0.5">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Margin Left (mm)</label>
+                <input type="number" id="marginLeftInput" class="form-control" value="8" step="0.5">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Gap X (mm)</label>
+                <input type="number" id="gapXInput" class="form-control" value="2.5" step="0.5">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gap Y (mm)</label>
+                <input type="number" id="gapYInput" class="form-control" value="2.5" step="0.5">
+              </div>
+            </div>
+
+            <div class="card-header" style="margin-top:1.5rem;">
+              <div class="card-title"><i class="fa-solid fa-eye"></i> Content & Display Settings</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Currency Symbol</label>
+              <input type="text" id="currencyInput" class="form-control" value="Rs.">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Store / Company Header</label>
+              <input type="text" id="companyHeaderInput" class="form-control" placeholder="e.g. Retail Store">
+            </div>
+
+            <div class="form-group">
+              <label class="switch-label">
+                <span>Show Cut Border Lines</span>
+                <input type="checkbox" id="switchBorder" class="switch-input" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="switch-label">
+                <span>Show Product Name</span>
+                <input type="checkbox" id="switchTitle" class="switch-input" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="switch-label">
+                <span>Show Price Tag</span>
+                <input type="checkbox" id="switchPrice" class="switch-input" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="switch-label">
+                <span>Show Barcode Value Text</span>
+                <input type="checkbox" id="switchCodeText" class="switch-input" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <button class="btn btn-primary btn-print" style="width:100%; margin-top:1rem;">
+              <i class="fa-solid fa-print"></i> Print Labels Now
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Sheet Display Preview -->
+        <div>
+          <div class="preview-toolbar no-print">
+            <div class="page-controls">
+              <span id="pageInfo" style="font-weight:600; font-size:0.9rem; color:var(--text-secondary);">
+                Total Labels: 0
+              </span>
+            </div>
+            <div>
+              <button class="btn btn-primary btn-print">
+                <i class="fa-solid fa-print"></i> Print Sheet
+              </button>
+            </div>
+          </div>
+
+          <!-- Printable Sheet Canvas Wrapper -->
+          <div class="sheet-container-wrapper">
+            <div id="sheetWrapper">
+              <!-- Dynamically populated A4 Pages -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 3: Single Barcode Quick Generator
+         ==================================================================== -->
+    <section id="quickGenView" class="view-section">
+      <div style="max-width:600px; margin:2rem auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-bolt"></i> Instant Single Barcode Generator</div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Barcode Value / Number</label>
+            <input type="text" id="quickBarcodeText" class="form-control" value="8901000000019" placeholder="Enter text or numbers">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Barcode Standard Type</label>
+            <select id="quickBarcodeType" class="form-select">
+              <option value="CODE128">CODE128 (Alphanumeric - General Purpose)</option>
+              <option value="EAN13" selected>EAN-13 (13-digit Retail Standard)</option>
+              <option value="EAN8">EAN-8 (8-digit Small Retail)</option>
+              <option value="UPC">UPC (12-digit US Standard)</option>
+              <option value="CODE39">CODE39 (Industrial Standard)</option>
+            </select>
+          </div>
+
+          <div class="barcode-preview-box">
+            <svg id="quickBarcodeSvg"></svg>
+          </div>
+
+          <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+            <button class="btn btn-primary" onclick="downloadQuickSvg()" style="flex:1;">
+              <i class="fa-solid fa-download"></i> Download SVG Vector
+            </button>
+            <button class="btn btn-secondary btn-print" style="flex:1;">
+              <i class="fa-solid fa-print"></i> Print Single Barcode
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
